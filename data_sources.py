@@ -1,49 +1,138 @@
-import io, os
-from datetime import datetime, timezone, timedelta
+import io
+import os
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
+
 import pandas as pd
 import requests
+
 from scanner import LEAGUES
 
-DATA=Path('data'); DATA.mkdir(exist_ok=True)
-# football-data.co.uk: historical CSVs, check provider licence before redistribution.
-SEASONS=['2526','2627']
+DATA = Path('data')
+DATA.mkdir(exist_ok=True)
+SEASONS = ['2526', '2627']
+API_BASE = 'https://v3.football.api-sports.io'
+API_LEAGUES = {39: 'E0', 140: 'SP1', 135: 'I1', 78: 'D1', 61: 'F1', 179: 'SC0', 88: 'N1'}
+
+# API-Football and football-data.co.uk sometimes use different team names.
+# Extend these aliases when a team fails to match the historical dataset.
+ALIASES = {
+    'Manchester United': 'Man United',
+    'Manchester City': 'Man City',
+    'Tottenham Hotspur': 'Tottenham',
+    'Newcastle United': 'Newcastle',
+    'Wolverhampton Wanderers': 'Wolves',
+    'Nottingham Forest': "Nott'm Forest",
+    'Brighton': 'Brighton',
+    'Brighton & Hove Albion': 'Brighton',
+    'West Ham United': 'West Ham',
+    'Atletico Madrid': 'Ath Madrid',
+    'Athletic Club': 'Ath Bilbao',
+    'Real Betis': 'Betis',
+    'Real Sociedad': 'Sociedad',
+    'Inter': 'Inter',
+    'AC Milan': 'Milan',
+    'AS Roma': 'Roma',
+    'Bayern München': 'Bayern Munich',
+    'Borussia Dortmund': 'Dortmund',
+    'Bayer Leverkusen': 'Leverkusen',
+    'Paris Saint Germain': 'Paris SG',
+    'Paris Saint-Germain': 'Paris SG',
+    'PSV Eindhoven': 'PSV',
+}
+
 
 def history():
-    frames=[]
+    frames = []
     for season in SEASONS:
         for code in LEAGUES:
-            url=f'https://www.football-data.co.uk/mmz4281/{season}/{code}.csv'
+            url = f'https://www.football-data.co.uk/mmz4281/{season}/{code}.csv'
             try:
-                r=requests.get(url,timeout=18); r.raise_for_status()
-                d=pd.read_csv(io.BytesIO(r.content),on_bad_lines='skip')
-                needed={'Div','Date','HomeTeam','AwayTeam','FTHG','FTAG','FTR'}
-                if not needed.issubset(d.columns): continue
-                d=d[list(needed)].copy()
-                d['Date']=pd.to_datetime(d['Date'],dayfirst=True,errors='coerce')
-                for c in ['FTHG','FTAG']: d[c]=pd.to_numeric(d[c],errors='coerce')
-                frames.append(d.dropna(subset=['Date','FTHG','FTAG','HomeTeam','AwayTeam']))
-            except Exception as e: print('History unavailable:',code,season,str(e)[:120])
-    if not frames: return pd.DataFrame(columns=['Div','Date','HomeTeam','AwayTeam','FTHG','FTAG','FTR'])
-    return pd.concat(frames,ignore_index=True).drop_duplicates(subset=['Div','Date','HomeTeam','AwayTeam']).sort_values('Date')
+                response = requests.get(url, timeout=18)
+                response.raise_for_status()
+                frame = pd.read_csv(io.BytesIO(response.content), on_bad_lines='skip')
+                needed = ['Div', 'Date', 'HomeTeam', 'AwayTeam', 'FTHG', 'FTAG', 'FTR']
+                if not set(needed).issubset(frame.columns):
+                    continue
+                frame = frame[needed].copy()
+                frame['Date'] = pd.to_datetime(frame['Date'], dayfirst=True, errors='coerce')
+                for col in ('FTHG', 'FTAG'):
+                    frame[col] = pd.to_numeric(frame[col], errors='coerce')
+                frames.append(frame.dropna(subset=['Date', 'FTHG', 'FTAG', 'HomeTeam', 'AwayTeam']))
+            except Exception as exc:
+                print('History unavailable:', code, season, str(exc)[:120])
+    if not frames:
+        return pd.DataFrame(columns=['Div', 'Date', 'HomeTeam', 'AwayTeam', 'FTHG', 'FTAG', 'FTR'])
+    return pd.concat(frames, ignore_index=True).drop_duplicates(
+        subset=['Div', 'Date', 'HomeTeam', 'AwayTeam']
+    ).sort_values('Date')
+
+
+def _api_fixtures_for_day(day):
+    key = os.environ.get('API_FOOTBALL_KEY', '').strip()
+    if not key:
+        raise RuntimeError('API_FOOTBALL_KEY missing from GitHub Actions environment')
+    response = requests.get(
+        API_BASE + '/fixtures',
+        params={'date': day, 'timezone': 'UTC'},
+        headers={'x-apisports-key': key},
+        timeout=30,
+    )
+    response.raise_for_status()
+    payload = response.json()
+    if payload.get('errors'):
+        raise RuntimeError('API-Football error: ' + str(payload['errors'])[:300])
+    return payload.get('response', [])
+
 
 def fixtures():
-    """Use licensed provider fixture export; no fake fixtures. UTC timestamps."""
-    path=DATA/'fixtures.csv'
-    cols=['fixture_id','kickoff','league','home','away']
-    if not path.exists(): return pd.DataFrame(columns=cols)
-    d=pd.read_csv(path,dtype={'fixture_id':str,'league':str})
-    if not set(cols).issubset(d.columns): raise ValueError('fixtures.csv missing required columns')
-    d=d[cols].copy(); d['kickoff']=pd.to_datetime(d['kickoff'],utc=True,errors='coerce')
-    now=datetime.now(timezone.utc)
-    return d[(d['kickoff']>=now)&(d['kickoff']<now+timedelta(hours=24))&d['league'].isin(LEAGUES)].copy()
+    """Fetch scheduled matches in the next rolling 24h for seven top divisions."""
+    now = datetime.now(timezone.utc)
+    end = now + timedelta(hours=24)
+    days = sorted({now.date().isoformat(), end.date().isoformat()})
+    cols = ['fixture_id', 'kickoff', 'league', 'home', 'away']
+    rows = []
+    raw_count = 0
+    for day in days:
+        items = _api_fixtures_for_day(day)
+        raw_count += len(items)
+        for item in items:
+            league_id = item.get('league', {}).get('id')
+            if league_id not in API_LEAGUES:
+                continue
+            fixture = item.get('fixture', {})
+            if fixture.get('status', {}).get('short') != 'NS':
+                continue
+            kickoff = pd.to_datetime(fixture.get('date'), utc=True, errors='coerce')
+            if pd.isna(kickoff) or not (pd.Timestamp(now) <= kickoff < pd.Timestamp(end)):
+                continue
+            teams = item.get('teams', {})
+            home = teams.get('home', {}).get('name', '')
+            away = teams.get('away', {}).get('name', '')
+            rows.append({
+                'fixture_id': str(fixture.get('id')),
+                'kickoff': kickoff.isoformat(),
+                'league': API_LEAGUES[league_id],
+                'home': ALIASES.get(home, home),
+                'away': ALIASES.get(away, away),
+            })
+    frame = pd.DataFrame(rows, columns=cols).drop_duplicates(subset=['fixture_id'])
+    frame.to_csv(DATA / 'fixtures.csv', index=False)
+    print(f'API-Football returned {raw_count} matches on {days}; {len(frame)} qualify for the next 24h')
+    if raw_count == 0:
+        print('WARNING: No fixtures returned; check API plan coverage for the current season.')
+    return frame
+
 
 def odds():
-    """Only authorised/contractually permitted bookmaker odds export."""
-    path=DATA/'odds.csv'
-    cols=['fixture_id','market','decimal_odds','bookmaker']
-    if not path.exists(): return pd.DataFrame(columns=cols)
-    d=pd.read_csv(path,dtype={'fixture_id':str})
-    if not set(cols).issubset(d.columns): raise ValueError('odds.csv missing required columns')
-    d=d[cols].copy();d['decimal_odds']=pd.to_numeric(d['decimal_odds'],errors='coerce')
-    return d[d['decimal_odds']>1]
+    """Read authorised bookmaker quotes only; do not invent prices."""
+    path = DATA / 'odds.csv'
+    cols = ['fixture_id', 'market', 'decimal_odds', 'bookmaker']
+    if not path.exists():
+        return pd.DataFrame(columns=cols)
+    frame = pd.read_csv(path, dtype={'fixture_id': str})
+    if not set(cols).issubset(frame.columns):
+        raise ValueError('odds.csv missing required columns')
+    frame = frame[cols].copy()
+    frame['decimal_odds'] = pd.to_numeric(frame['decimal_odds'], errors='coerce')
+    return frame[frame['decimal_odds'] > 1]
