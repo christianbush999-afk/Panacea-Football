@@ -1,0 +1,10 @@
+{
+  "run_utc": "2026-11-24T16:32:08.633523+00:00",
+  "historical_matches": 3032,
+  "fixtures_next_24h": 0,
+  "odds_rows": 0,
+  "model_rows": 0,
+  "value_candidates": 0,
+  "backtest_rows": 250,
+  "note": "Historical backtest measures calibration only. Betting ROI needs archived pre-match bookmaker prices."
+}
