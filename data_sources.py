@@ -1,3 +1,4 @@
+
 import io
 import os
 import json
@@ -9,46 +10,45 @@ import requests
 
 from scanner import LEAGUES
 
-DATA = Path('data')
+DATA = Path("data")
 DATA.mkdir(exist_ok=True)
 
-SEASONS = ['2526', '2627']
-
-API_BASE = 'https://v3.football.api-sports.io'
+SEASONS = ["2526", "2627"]
+API_BASE = "https://v3.football.api-sports.io"
 
 API_LEAGUES = {
-    39: 'E0',
-    140: 'SP1',
-    135: 'I1',
-    78: 'D1',
-    61: 'F1',
-    179: 'SC0',
-    88: 'N1',
+    39: "E0",
+    140: "SP1",
+    135: "I1",
+    78: "D1",
+    61: "F1",
+    179: "SC0",
+    88: "N1",
 }
 
 ALIASES = {
-    'Manchester United': 'Man United',
-    'Manchester City': 'Man City',
-    'Tottenham Hotspur': 'Tottenham',
-    'Newcastle United': 'Newcastle',
-    'Wolverhampton Wanderers': 'Wolves',
-    'Nottingham Forest': "Nott'm Forest",
-    'Brighton': 'Brighton',
-    'Brighton & Hove Albion': 'Brighton',
-    'West Ham United': 'West Ham',
-    'Atletico Madrid': 'Ath Madrid',
-    'Athletic Club': 'Ath Bilbao',
-    'Real Betis': 'Betis',
-    'Real Sociedad': 'Sociedad',
-    'Inter': 'Inter',
-    'AC Milan': 'Milan',
-    'AS Roma': 'Roma',
-    'Bayern München': 'Bayern Munich',
-    'Borussia Dortmund': 'Dortmund',
-    'Bayer Leverkusen': 'Leverkusen',
-    'Paris Saint Germain': 'Paris SG',
-    'Paris Saint-Germain': 'Paris SG',
-    'PSV Eindhoven': 'PSV',
+    "Manchester United": "Man United",
+    "Manchester City": "Man City",
+    "Tottenham Hotspur": "Tottenham",
+    "Newcastle United": "Newcastle",
+    "Wolverhampton Wanderers": "Wolves",
+    "Nottingham Forest": "Nott'm Forest",
+    "Brighton": "Brighton",
+    "Brighton & Hove Albion": "Brighton",
+    "West Ham United": "West Ham",
+    "Atletico Madrid": "Ath Madrid",
+    "Athletic Club": "Ath Bilbao",
+    "Real Betis": "Betis",
+    "Real Sociedad": "Sociedad",
+    "Inter": "Inter",
+    "AC Milan": "Milan",
+    "AS Roma": "Roma",
+    "Bayern München": "Bayern Munich",
+    "Borussia Dortmund": "Dortmund",
+    "Bayer Leverkusen": "Leverkusen",
+    "Paris Saint Germain": "Paris SG",
+    "Paris Saint-Germain": "Paris SG",
+    "PSV Eindhoven": "PSV",
 }
 
 
@@ -58,8 +58,8 @@ def history():
     for season in SEASONS:
         for code in LEAGUES:
             url = (
-                'https://www.football-data.co.uk/'
-                f'mmz4281/{season}/{code}.csv'
+                "https://www.football-data.co.uk/"
+                f"mmz4281/{season}/{code}.csv"
             )
 
             try:
@@ -68,12 +68,12 @@ def history():
 
                 frame = pd.read_csv(
                     io.BytesIO(response.content),
-                    on_bad_lines='skip'
+                    on_bad_lines="skip"
                 )
 
                 needed = [
-                    'Div', 'Date', 'HomeTeam',
-                    'AwayTeam', 'FTHG', 'FTAG', 'FTR'
+                    "Div", "Date", "HomeTeam",
+                    "AwayTeam", "FTHG", "FTAG", "FTR"
                 ]
 
                 if not set(needed).issubset(frame.columns):
@@ -81,40 +81,38 @@ def history():
 
                 frame = frame[needed].copy()
 
-                frame['Date'] = pd.to_datetime(
-                    frame['Date'],
+                frame["Date"] = pd.to_datetime(
+                    frame["Date"],
                     dayfirst=True,
-                    errors='coerce'
+                    errors="coerce"
                 )
 
-                for col in ('FTHG', 'FTAG'):
+                for col in ("FTHG", "FTAG"):
                     frame[col] = pd.to_numeric(
                         frame[col],
-                        errors='coerce'
+                        errors="coerce"
                     )
 
                 frames.append(
                     frame.dropna(
                         subset=[
-                            'Date', 'FTHG', 'FTAG',
-                            'HomeTeam', 'AwayTeam'
+                            "Date", "FTHG", "FTAG",
+                            "HomeTeam", "AwayTeam"
                         ]
                     )
                 )
 
             except Exception as exc:
                 print(
-                    'History unavailable:',
-                    code,
-                    season,
-                    str(exc)[:120]
+                    "History unavailable:",
+                    code, season, str(exc)[:120]
                 )
 
     if not frames:
         return pd.DataFrame(
             columns=[
-                'Div', 'Date', 'HomeTeam',
-                'AwayTeam', 'FTHG', 'FTAG', 'FTR'
+                "Div", "Date", "HomeTeam",
+                "AwayTeam", "FTHG", "FTAG", "FTR"
             ]
         )
 
@@ -122,188 +120,212 @@ def history():
         pd.concat(frames, ignore_index=True)
         .drop_duplicates(
             subset=[
-                'Div', 'Date',
-                'HomeTeam', 'AwayTeam'
+                "Div", "Date",
+                "HomeTeam", "AwayTeam"
             ]
         )
-        .sort_values('Date')
+        .sort_values("Date")
     )
 
 
-def _api_fixtures_for_day(day):
+def _api_request(params):
     key = os.environ.get(
-        'API_FOOTBALL_KEY', ''
+        "API_FOOTBALL_KEY", ""
     ).strip()
 
     if not key:
         raise RuntimeError(
-            'API_FOOTBALL_KEY missing from '
-            'GitHub Actions environment'
+            "API_FOOTBALL_KEY missing from "
+            "GitHub Actions environment"
         )
 
     response = requests.get(
-        API_BASE + '/fixtures',
-        params={
-            'date': day,
-            'timezone': 'UTC'
-        },
-        headers={
-            'x-apisports-key': key
-        },
+        API_BASE + "/fixtures",
+        params=params,
+        headers={"x-apisports-key": key},
         timeout=30
     )
 
     response.raise_for_status()
-    payload = response.json()
+    return response.json()
 
-    if payload.get('errors'):
-        errors = payload['errors']
+
+def _api_fixtures_for_day(day):
+    payload = _api_request({
+        "date": day,
+        "timezone": "UTC"
+    })
+
+    if payload.get("errors"):
         print(
-            'API-Football rejected date',
+            "API date error:",
             day,
-            str(errors)[:300]
+            str(payload["errors"])[:300]
         )
         return []
 
-    return payload.get('response', [])
+    return payload.get("response", [])
 
 
 def fixtures():
-    """Fetch fixtures in the next rolling 24 hours."""
+    """Fetch upcoming fixtures for selected leagues."""
 
     now = datetime.now(timezone.utc)
     end = now + timedelta(hours=24)
 
-    days = [
-        (now.date() + timedelta(days=i)).isoformat()
-        for i in range(
-            (end.date() - now.date()).days + 1
-        )
-    ]
-
     cols = [
-        'fixture_id',
-        'kickoff',
-        'league',
-        'home',
-        'away'
+        "fixture_id",
+        "kickoff",
+        "league",
+        "home",
+        "away"
     ]
 
     rows = []
-    raw_count = 0
-    failed_days = []
 
     diagnostics = {
-        'other_league': 0,
-        'not_scheduled': 0,
-        'outside_window': 0,
-        'invalid_kickoff': 0,
-        'accepted': 0
+        "window_hours": 24,
+        "league_results": {},
+        "errors": {},
+        "raw_matches": 0,
+        "accepted": 0,
+        "outside_window": 0,
+        "not_scheduled": 0,
+        "invalid_kickoff": 0
     }
 
-    for day in days:
-        try:
-            items = _api_fixtures_for_day(day)
-        except requests.RequestException as exc:
-            print('Fixture request failed:', day, str(exc)[:200])
-            failed_days.append(day)
-            continue
+    # Query the seven selected leagues individually.
+    # Two UTC calendar dates may overlap a 24h window.
+    days = sorted({
+        now.date().isoformat(),
+        end.date().isoformat()
+    })
 
-        raw_count += len(items)
+    for league_id, league_code in API_LEAGUES.items():
+        league_total = 0
 
-        for item in items:
-            league_id = item.get(
-                'league', {}
-            ).get('id')
-
-            if league_id not in API_LEAGUES:
-                diagnostics['other_league'] += 1
-                continue
-
-            fixture = item.get('fixture', {})
-
-            status = fixture.get(
-                'status', {}
-            ).get('short')
-
-            if status != 'NS':
-                diagnostics['not_scheduled'] += 1
-                continue
-
-            kickoff = pd.to_datetime(
-                fixture.get('date'),
-                utc=True,
-                errors='coerce'
+        for day in days:
+            season = (
+                int(day[:4])
+                if int(day[5:7]) >= 7
+                else int(day[:4]) - 1
             )
 
-            if pd.isna(kickoff):
-                diagnostics['invalid_kickoff'] += 1
+            params = {
+                "league": league_id,
+                "season": season,
+                "date": day,
+                "timezone": "UTC"
+            }
+
+            try:
+                payload = _api_request(params)
+
+            except requests.RequestException as exc:
+                diagnostics["errors"][
+                    f"{league_code}:{day}"
+                ] = str(exc)[:200]
                 continue
 
-            if not (
-                pd.Timestamp(now)
-                <= kickoff
-                < pd.Timestamp(end)
-            ):
-                diagnostics['outside_window'] += 1
+            if payload.get("errors"):
+                diagnostics["errors"][
+                    f"{league_code}:{day}"
+                ] = str(payload["errors"])[:300]
                 continue
 
-            teams = item.get('teams', {})
+            items = payload.get("response", [])
+            league_total += len(items)
+            diagnostics["raw_matches"] += len(items)
 
-            home = teams.get(
-                'home', {}
-            ).get('name', '')
+            for item in items:
+                fixture = item.get("fixture", {})
 
-            away = teams.get(
-                'away', {}
-            ).get('name', '')
+                status = fixture.get(
+                    "status", {}
+                ).get("short")
 
-            rows.append({
-                'fixture_id': str(
-                    fixture.get('id')
-                ),
-                'kickoff': kickoff.isoformat(),
-                'league': API_LEAGUES[league_id],
-                'home': ALIASES.get(home, home),
-                'away': ALIASES.get(away, away)
-            })
+                if status != "NS":
+                    diagnostics["not_scheduled"] += 1
+                    continue
 
-            diagnostics['accepted'] += 1
+                kickoff = pd.to_datetime(
+                    fixture.get("date"),
+                    utc=True,
+                    errors="coerce"
+                )
+
+                if pd.isna(kickoff):
+                    diagnostics["invalid_kickoff"] += 1
+                    continue
+
+                if not (
+                    pd.Timestamp(now)
+                    <= kickoff
+                    < pd.Timestamp(end)
+                ):
+                    diagnostics["outside_window"] += 1
+                    continue
+
+                teams = item.get("teams", {})
+
+                home = teams.get(
+                    "home", {}
+                ).get("name", "")
+
+                away = teams.get(
+                    "away", {}
+                ).get("name", "")
+
+                rows.append({
+                    "fixture_id": str(
+                        fixture.get("id")
+                    ),
+                    "kickoff": kickoff.isoformat(),
+                    "league": league_code,
+                    "home": ALIASES.get(home, home),
+                    "away": ALIASES.get(away, away)
+                })
+
+                diagnostics["accepted"] += 1
+
+        diagnostics["league_results"][
+            league_code
+        ] = league_total
 
     frame = pd.DataFrame(
         rows,
         columns=cols
     ).drop_duplicates(
-        subset=['fixture_id']
+        subset=["fixture_id"]
     )
 
     frame.to_csv(
-        DATA / 'fixtures.csv',
+        DATA / "fixtures.csv",
         index=False
     )
 
-    report = {
-        'raw_matches': raw_count,
-        'days': days,
-        'window_hours': 24,
-        'failed_days': failed_days,
-        'filters': diagnostics,
-        'qualifying_fixtures': len(frame)
-    }
+    diagnostics["qualifying_fixtures"] = len(frame)
+    diagnostics["days"] = days
 
     (
-        DATA / 'fixture_diagnostics.json'
+        DATA / "fixture_diagnostics.json"
     ).write_text(
-        json.dumps(report, indent=2)
+        json.dumps(diagnostics, indent=2)
     )
 
-    print('Fixture diagnostics:')
-    print(json.dumps(report, indent=2))
+    print("Fixture diagnostics:")
+    print(json.dumps(diagnostics, indent=2))
 
-    if raw_count == 0:
+    if diagnostics["errors"]:
         print(
-            'WARNING: No fixtures returned; '
-            'check API plan coverage.'
+            "WARNING: Some API requests failed "
+            "or were rejected. Check plan coverage."
+        )
+
+    if frame.empty:
+        print(
+            "No qualifying fixtures found in "
+            "the next 24 hours."
         )
 
     return frame
@@ -312,13 +334,13 @@ def fixtures():
 def odds():
     """Read authorised bookmaker quotes only."""
 
-    path = DATA / 'odds.csv'
+    path = DATA / "odds.csv"
 
     cols = [
-        'fixture_id',
-        'market',
-        'decimal_odds',
-        'bookmaker'
+        "fixture_id",
+        "market",
+        "decimal_odds",
+        "bookmaker"
     ]
 
     if not path.exists():
@@ -326,21 +348,21 @@ def odds():
 
     frame = pd.read_csv(
         path,
-        dtype={'fixture_id': str}
+        dtype={"fixture_id": str}
     )
 
     if not set(cols).issubset(frame.columns):
         raise ValueError(
-            'odds.csv missing required columns'
+            "odds.csv missing required columns"
         )
 
     frame = frame[cols].copy()
 
-    frame['decimal_odds'] = pd.to_numeric(
-        frame['decimal_odds'],
-        errors='coerce'
+    frame["decimal_odds"] = pd.to_numeric(
+        frame["decimal_odds"],
+        errors="coerce"
     )
 
     return frame[
-        frame['decimal_odds'] > 1
+        frame["decimal_odds"] > 1
     ]
