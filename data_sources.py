@@ -1,4 +1,3 @@
-
 import io
 import os
 import json
@@ -155,23 +154,25 @@ def _api_fixtures_for_day(day):
     )
 
     response.raise_for_status()
-
     payload = response.json()
 
     if payload.get('errors'):
-        raise RuntimeError(
-            'API-Football error: '
-            + str(payload['errors'])[:300]
+        errors = payload['errors']
+        print(
+            'API-Football rejected date',
+            day,
+            str(errors)[:300]
         )
+        return []
 
     return payload.get('response', [])
 
 
 def fixtures():
-    """Fetch fixtures in the next rolling 72 hours."""
+    """Fetch fixtures in the next rolling 24 hours."""
 
     now = datetime.now(timezone.utc)
-    end = now + timedelta(hours=72)
+    end = now + timedelta(hours=24)
 
     days = [
         (now.date() + timedelta(days=i)).isoformat()
@@ -190,6 +191,7 @@ def fixtures():
 
     rows = []
     raw_count = 0
+    failed_days = []
 
     diagnostics = {
         'other_league': 0,
@@ -200,7 +202,13 @@ def fixtures():
     }
 
     for day in days:
-        items = _api_fixtures_for_day(day)
+        try:
+            items = _api_fixtures_for_day(day)
+        except requests.RequestException as exc:
+            print('Fixture request failed:', day, str(exc)[:200])
+            failed_days.append(day)
+            continue
+
         raw_count += len(items)
 
         for item in items:
@@ -277,7 +285,8 @@ def fixtures():
     report = {
         'raw_matches': raw_count,
         'days': days,
-        'window_hours': 72,
+        'window_hours': 24,
+        'failed_days': failed_days,
         'filters': diagnostics,
         'qualifying_fixtures': len(frame)
     }
