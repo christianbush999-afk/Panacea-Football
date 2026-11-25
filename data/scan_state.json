@@ -1,10 +1,29 @@
 {
-  "run_utc": "2026-11-25T01:21:57.096731+00:00",
+  "run_utc": "2026-11-25T07:01:17.534927+00:00",
   "historical_matches": 3032,
-  "fixtures_next_24h": 0,
+  "fixtures_next_72h": 0,
+  "modelled_fixtures": 0,
+  "unmodelled_fixtures": 0,
   "odds_rows": 0,
   "model_rows": 0,
   "value_candidates": 0,
   "backtest_rows": 250,
+  "fixture_diagnostics": {
+    "raw_matches": 370,
+    "days": [
+      "2026-11-25",
+      "2026-11-26"
+    ],
+    "window_hours": 24,
+    "failed_days": [],
+    "filters": {
+      "other_league": 370,
+      "not_scheduled": 0,
+      "outside_window": 0,
+      "invalid_kickoff": 0,
+      "accepted": 0
+    },
+    "qualifying_fixtures": 0
+  },
   "note": "Historical backtest measures calibration only. Betting ROI needs archived pre-match bookmaker prices."
 }
