@@ -1,5 +1,5 @@
 {
-  "run_utc": "2026-11-25T07:04:06.006727+00:00",
+  "run_utc": "2026-11-25T07:29:05.887129+00:00",
   "historical_matches": 3032,
   "fixtures_next_72h": 0,
   "modelled_fixtures": 0,
@@ -9,42 +9,24 @@
   "value_candidates": 0,
   "backtest_rows": 250,
   "fixture_diagnostics": {
+    "provider": "football-data.org",
     "window_hours": 24,
     "league_results": {
-      "E0": 0,
-      "SP1": 0,
-      "I1": 0,
-      "D1": 0,
-      "F1": 0,
-      "SC0": 0,
-      "N1": 0
+      "E0": 270,
+      "SP1": 250,
+      "I1": 260,
+      "D1": 216,
+      "F1": 207,
+      "N1": 189
     },
-    "errors": {
-      "E0:2026-11-25": "{'plan': 'Free plans do not have access to this season, try from 2022 to 2024.'}",
-      "E0:2026-11-26": "{'plan': 'Free plans do not have access to this season, try from 2022 to 2024.'}",
-      "SP1:2026-11-25": "{'plan': 'Free plans do not have access to this season, try from 2022 to 2024.'}",
-      "SP1:2026-11-26": "{'plan': 'Free plans do not have access to this season, try from 2022 to 2024.'}",
-      "I1:2026-11-25": "{'plan': 'Free plans do not have access to this season, try from 2022 to 2024.'}",
-      "I1:2026-11-26": "{'plan': 'Free plans do not have access to this season, try from 2022 to 2024.'}",
-      "D1:2026-11-25": "{'plan': 'Free plans do not have access to this season, try from 2022 to 2024.'}",
-      "D1:2026-11-26": "{'plan': 'Free plans do not have access to this season, try from 2022 to 2024.'}",
-      "F1:2026-11-25": "{'plan': 'Free plans do not have access to this season, try from 2022 to 2024.'}",
-      "F1:2026-11-26": "{'plan': 'Free plans do not have access to this season, try from 2022 to 2024.'}",
-      "SC0:2026-11-25": "{'plan': 'Free plans do not have access to this season, try from 2022 to 2024.'}",
-      "SC0:2026-11-26": "{'plan': 'Free plans do not have access to this season, try from 2022 to 2024.'}",
-      "N1:2026-11-25": "{'plan': 'Free plans do not have access to this season, try from 2022 to 2024.'}",
-      "N1:2026-11-26": "{'plan': 'Free plans do not have access to this season, try from 2022 to 2024.'}"
-    },
-    "raw_matches": 0,
+    "errors": {},
+    "raw_matches": 1392,
     "accepted": 0,
-    "outside_window": 0,
+    "outside_window": 1392,
     "not_scheduled": 0,
     "invalid_kickoff": 0,
     "qualifying_fixtures": 0,
-    "days": [
-      "2026-11-25",
-      "2026-11-26"
-    ]
+    "checked_at": "2026-11-25T07:28:59.522837+00:00"
   },
   "note": "Historical backtest measures calibration only. Betting ROI needs archived pre-match bookmaker prices."
 }

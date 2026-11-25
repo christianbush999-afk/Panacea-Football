@@ -1,0 +1,20 @@
+{
+  "provider": "football-data.org",
+  "window_hours": 24,
+  "league_results": {
+    "E0": 270,
+    "SP1": 250,
+    "I1": 260,
+    "D1": 216,
+    "F1": 207,
+    "N1": 189
+  },
+  "errors": {},
+  "raw_matches": 1392,
+  "accepted": 0,
+  "outside_window": 1392,
+  "not_scheduled": 0,
+  "invalid_kickoff": 0,
+  "qualifying_fixtures": 0,
+  "checked_at": "2026-11-25T07:28:59.522837+00:00"
+}
