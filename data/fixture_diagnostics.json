@@ -3,18 +3,18 @@
   "window_hours": 24,
   "league_results": {
     "E0": 270,
-    "SP1": 250,
+    "SP1": 251,
     "I1": 260,
     "D1": 216,
     "F1": 207,
     "N1": 189
   },
   "errors": {},
-  "raw_matches": 1392,
+  "raw_matches": 1393,
   "accepted": 0,
-  "outside_window": 1392,
+  "outside_window": 1393,
   "not_scheduled": 0,
   "invalid_kickoff": 0,
   "qualifying_fixtures": 0,
-  "checked_at": "2026-11-26T00:53:47.693637+00:00"
+  "checked_at": "2026-11-26T07:00:17.033329+00:00"
 }
