@@ -1,6 +1,6 @@
 {
-  "run_utc": "2026-11-26T07:00:23.877207+00:00",
-  "historical_matches": 3032,
+  "run_utc": "2026-11-26T13:02:36.156950+00:00",
+  "historical_matches": 3034,
   "fixtures_next_72h": 0,
   "modelled_fixtures": 0,
   "unmodelled_fixtures": 0,
@@ -26,7 +26,7 @@
     "not_scheduled": 0,
     "invalid_kickoff": 0,
     "qualifying_fixtures": 0,
-    "checked_at": "2026-11-26T07:00:17.033329+00:00"
+    "checked_at": "2026-11-26T13:02:30.219871+00:00"
   },
   "note": "Historical backtest measures calibration only. Betting ROI needs archived pre-match bookmaker prices."
 }
